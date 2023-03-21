@@ -4,8 +4,8 @@ plugins {
     id("org.openapi.generator")
 }
 
-group = rootProject.group
-version = rootProject.version
+group = "com.salnikoff"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
