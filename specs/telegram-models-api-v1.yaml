@@ -1,0 +1,432 @@
+openapi: 3.0.4
+info:
+  title: Telegram API
+  description: Telegram API in YAML format by Salnikoff.com
+  version: 1.0.1
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: fromTelegram
+    description: Request from telegram API
+  - name: toTelegram
+    description: Request to telegram API
+paths:
+
+  /tg:
+    post:
+      tags:
+        - fromTelegram
+      summary: receive update from tg api
+      operationId: tgUpdate
+      requestBody:
+        description: request body
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramUpdate"
+        required: true
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+
+  /sendMessage:
+    post:
+      tags:
+        - toTelegram
+      summary: send message to tg user or group
+      operationId: sendMessage
+      requestBody:
+        description: send message body
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramRequestSendMessage"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramSendMessageResponse'
+
+
+components:
+  schemas:
+
+    TelegramUpdate:
+      title: Telegram update
+      type: object
+      properties:
+        update_id:
+          format: int64
+          type: integer
+        message:
+          $ref: "#/components/schemas/TelegramMessage"
+        callback_query:
+          type: object
+          properties:
+            id:
+              type: string
+            from:
+              $ref: "#/components/schemas/TelegramUser"
+            message:
+              $ref: "#/components/schemas/TelegramMessage"
+            inline_message_id:
+              type: string
+            chat_instance:
+              type: string
+            data:
+              type: string
+            game_short_name:
+              type: string
+
+    TelegramMessage:
+      type: object
+      properties:
+        message_id:
+          format: int64
+          type: integer
+        from:
+          $ref: "#/components/schemas/TelegramUser"
+        sender_chat:
+          $ref: "#/components/schemas/TelegramChat"
+        date:
+          format: int64
+          type: integer
+        chat:
+          $ref: "#/components/schemas/TelegramChat"
+        forward_from:
+          $ref: "#/components/schemas/TelegramUser"
+        forward_from_chat:
+          $ref: "#/components/schemas/TelegramChat"
+        forward_from_message_id:
+          format: int64
+          type: integer
+        forward_signature:
+          type: string
+        forward_sender_name:
+          type: string
+        forward_date:
+          format: int64
+          type: integer
+        is_automatic_forward:
+          type: boolean
+        reply_to_message:
+          $ref: '#/components/schemas/TelegramMessage'
+        via_bot:
+          $ref: '#/components/schemas/TelegramUser'
+        edit_date:
+          format: int64
+          type: integer
+        has_protected_content:
+          type: boolean
+        media_group_id:
+          type: string
+        author_signature:
+          type: string
+        text:
+          type: string
+        entities:
+          type: array
+          items:
+            type: object
+            properties:
+              offset:
+                format: int64
+                type: integer
+              length:
+                format: int32
+                type: integer
+              type:
+                type: string
+              url:
+                type: string
+        document:
+            $ref: '#/components/schemas/TelegramDocument'
+        photo:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelegramPhotoSize'
+        caption:
+          type: string
+        reply_markup:
+          type: object
+          properties:
+            inline_keyboard:
+              type: array
+              items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                    callback_data:
+                      type: string
+
+    TelegramChat:
+      title: Chat entity of telegram update
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        username:
+          type: string
+        type:
+          type: string
+
+    ITelegramRequest:
+      type: object
+      properties:
+        telegram_request_type:
+          type: string
+      discriminator:
+        propertyName: telegram_request_type
+        mapping:
+          message: '#/components/TelegramRequestSendMessageBody'
+
+    TelegramRequestSendMessage:
+      allOf:
+        - $ref: '#/components/schemas/ITelegramRequest'
+        - $ref: '#/components/schemas/TelegramRequestSendMessageBody'
+
+    TelegramSendMessageResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        result:
+          $ref: '#/components/schemas/TelegramMessage'
+
+    TelegramRequestSendMessageBody:
+      title: Send message object for telegram API
+      type: object
+      required:
+        - chat_id
+        - text
+      properties:
+        chat_id:
+          type: string
+        text:
+          type: string
+        parse_mode:
+          $ref: "#/components/schemas/TelegramParseMode"
+        entities:
+          type: array
+          items:
+            $ref: "#/components/schemas/TelegramMessageEntity"
+        disable_web_page_preview:
+          type: boolean
+          nullable: true
+        disable_notification:
+          type: boolean
+          nullable: true
+        protect_content:
+          type: boolean
+          nullable: true
+        reply_to_message_id:
+          type: integer
+          format: int64
+          nullable: true
+        allow_sending_without_reply:
+          type: boolean
+          nullable: true
+        reply_markup:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/TelegramInlineKeyboardMarkup'
+            - $ref: '#/components/schemas/TelegramReplyKeyboardMarkup'
+
+    TelegramParseMode:
+      title: TelegramParseMode
+      nullable: true
+      type: string
+      enum:
+        - MarkdownV2
+        - HTML
+
+    TelegramMessageEntity:
+      title: TelegramMessageEntity
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - mention
+            - hashtag
+            - cashtag
+            - bot_command
+            - url
+            - email
+            - phone_number
+            - bold
+            - italic
+            - underline
+            - strikethrough
+            - spoiler
+            - code
+            - pre
+            - text_link
+            - text_mention
+            - custom_emoji
+        offset:
+          type: integer
+          nullable: true
+        length:
+          type: integer
+          nullable: true
+        url:
+          type: string
+          nullable: true
+        user:
+          $ref: "#/components/schemas/TelegramUser"
+        language:
+          type: string
+          nullable: true
+        custom_emoji_id:
+          type: string
+          nullable: true
+
+    TelegramUser:
+      type: object
+      nullable: true
+      required:
+        - id
+        - is_bot
+        - first_name
+      properties:
+        id:
+          format: int64
+          type: integer
+        is_bot:
+          type: boolean
+        first_name:
+          type: string
+        last_name:
+          type: string
+          nullable: true
+        username:
+          type: string
+          nullable: true
+        language_code:
+          type: string
+          nullable: true
+        is_premium:
+          type: boolean
+          nullable: true
+        added_to_attachment_menu:
+          type: boolean
+          nullable: true
+        can_join_groups:
+          type: boolean
+          nullable: true
+        can_read_all_group_messages:
+          type: boolean
+          nullable: true
+        supports_inline_queries:
+          type: boolean
+          nullable: true
+
+    TelegramInlineKeyboardMarkup:
+      type: object
+      properties:
+        inline_keyboard:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelegramInlineKeyboardButtonList'
+
+    TelegramInlineKeyboardButtonList:
+      type: array
+      items:
+        $ref: '#/components/schemas/TelegramInlineKeyboardButton'
+
+    TelegramInlineKeyboardButton:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        url:
+          type: string
+        callback_data:
+          type: string
+
+    TelegramReplyKeyboardMarkup:
+      type: object
+      properties:
+        keyboard:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelegramKeyboardButtonList'
+        resize_keyboard:
+          type: boolean
+        one_time_keyboard:
+          type: boolean
+        input_field_placeholder:
+          type: string
+        selective:
+          type: boolean
+
+    TelegramKeyboardButtonList:
+      type: array
+      items:
+        $ref: '#/components/schemas/TelegramKeyboardButton'
+
+    TelegramKeyboardButton:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        request_contact:
+          type: boolean
+        request_location:
+          type: boolean
+
+    TelegramDocument:
+      type: object
+      properties:
+        file_id:
+          type: string
+        file_unique_id:
+          type: string
+        thumb:
+          $ref: '#/components/schemas/TelegramPhotoSize'
+        file_name:
+          type: string
+        mime_type:
+          type: string
+        file_size:
+          type: integer
+          format: int64
+
+    TelegramPhotoSize:
+      type: object
+      properties:
+        file_id:
+          type: string
+        file_unique_id:
+          type: string
+        width:
+          type: integer
+          format: int64
+        height:
+          type: integer
+          format: int64
+        file_size:
+          type: integer
+          format: int64
